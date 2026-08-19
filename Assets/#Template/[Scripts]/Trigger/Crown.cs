@@ -1,0 +1,321 @@
+﻿using ConceptGames.ConceptLineOrion.Level;
+using ConceptGames.ConceptLineOrion.UI;
+using ConceptGames.ConceptLineOrion.Guide;
+using DG.Tweening;
+using Sirenix.OdinInspector;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.Events;
+
+namespace ConceptGames.ConceptLineOrion.Trigger
+{
+    public class Crown : MonoBehaviour
+    {
+        public GameObject crownObject;
+
+        public ParticleSystem crownAura;
+
+        public SpriteRenderer crownRenderer;
+
+        private const float auraTweenDuration = 1.25f;
+
+        private MeshRenderer crownMeshRenderer;
+
+        private Tween crownTween;
+
+        private readonly List<Tween> auraTweens = new();
+
+        private bool taken;
+
+        private Player player;
+        private bool usedRevive;
+        private bool usedParticalDisappear;
+
+        [Title("Player")][SerializeField] private Direction direction = Direction.First;
+
+        [SerializeField, HorizontalGroup("Camera")]
+        private new CameraSettings camera = new CameraSettings();
+
+        [SerializeField, HorizontalGroup("Camera"), HideLabel]
+        private bool manualCamera = false;
+
+        [SerializeField, HorizontalGroup("Fog")]
+        private FogSettings fog = new FogSettings();
+
+        [SerializeField, HorizontalGroup("Fog"), HideLabel]
+        private bool manualFog = false;
+
+        [SerializeField, HorizontalGroup("Light")]
+        private new LightSettings light = new LightSettings();
+
+        [SerializeField, HorizontalGroup("Light"), HideLabel]
+        private bool manualLight = false;
+
+        [SerializeField, HorizontalGroup("Ambient")]
+        private AmbientSettings ambient = new AmbientSettings();
+
+        [SerializeField, HorizontalGroup("Ambient"), HideLabel]
+        private bool manualAmbient = false;
+
+        [Title("Colors")]
+        [SerializeField, TableList]
+        private List<SingleColor> materialColorsAuto = new List<SingleColor>();
+
+        [SerializeField, TableList] private List<SingleColor> materialColorsManual = new List<SingleColor>();
+
+        [SerializeField, TableList] private List<SingleImage> imageColorsAuto = new List<SingleImage>();
+        [SerializeField, TableList] private List<SingleImage> imageColorsManual = new List<SingleImage>();
+
+        [Title("Event")][SerializeField] private UnityEvent onRevive = new UnityEvent();
+
+        [Space(30.0f), SerializeField] private bool AutoRecord = false;
+
+        [SerializeField, HideIf(nameof(AutoRecord))]
+        private float GameTime;
+
+        private int trackProgress;
+
+        [SerializeField, HideIf(nameof(AutoRecord))]
+        private float playerSpeed;
+
+        public UnityEvent eventWeNeedInvokeWhenJumpToHere;
+
+        public Vector3 sceneGravity = new Vector3(0, -9.3f, 0);
+
+        public Transform revivePosition;
+
+        private List<SetActive> actives = new List<SetActive>();
+        private List<PlayAnimator> animators = new List<PlayAnimator>();
+        private List<FakePlayer> fakes = new List<FakePlayer>();
+
+        public static Crown Instance { get; private set; }
+
+        public void Awake()
+        {
+            Instance = this;
+        }
+
+        private void Start()
+        {
+            player = Player.Instance;
+            actives = FindObjectsOfType<SetActive>(true).ToList();
+            animators = FindObjectsOfType<PlayAnimator>(true).ToList();
+            fakes = FindObjectsOfType<FakePlayer>(true).ToList();
+            crownMeshRenderer = crownObject.GetComponent<MeshRenderer>();
+            InitParticles();
+            if (crownAura) crownAura.transform.parent = transform;
+            revivePosition.gameObject.SetActive(false);
+        }
+
+        private void Update()
+        {
+            crownObject.transform.Rotate(Vector3.up, Time.deltaTime * 40f, Space.Self);
+        }
+
+        private void InitParticles()
+        {
+            if (!crownAura) return;
+            var color = crownMeshRenderer.material.color;
+            color.a = 0f;
+            var systems = crownAura.GetComponentsInChildren<ParticleSystem>();
+            foreach (var VARIABLE in systems)
+            {
+                var main = VARIABLE.main;
+                main.startColor = color;
+            }
+
+            crownAura.Play();
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (!other.CompareTag("Player") || taken) return;
+            taken = true;
+            player.Crowns.Add(this);
+            player.CrownCount++;
+            player.currentCheckpoint = this;
+            player.lastCrown = this;
+
+            if (!manualCamera && CameraFollower.Instance) camera = camera.GetCamera();
+            if (!manualFog) fog = fog.GetFog();
+            if (!manualLight) light = light.GetLight(player.sceneLight);
+            if (!manualAmbient) ambient = ambient.GetAmbient();
+            foreach (SingleColor s in materialColorsAuto) s.GetColor();
+            foreach (SingleImage s in imageColorsAuto) s.GetColor();
+
+            if (AutoRecord)
+            {
+                GameTime = AudioManager.Time;
+                playerSpeed = player.Speed;
+            }
+            sceneGravity = Physics.gravity;
+
+            foreach (SetActive s in actives)
+                if (!s.activeOnAwake)
+                    s.AddRevives();
+            foreach (PlayAnimator a in animators)
+                foreach (SingleAnimator s in a.animators)
+                    if (!s.dontRevive)
+                        s.GetState();
+            foreach (FakePlayer f in fakes) f.GetData();
+            player.GetAnimatorProgresses();
+            player.GetTimelineProgresses();
+            TakeCrown();
+        }
+
+        private void TakeCrown()
+        {
+            RefreshParticlesColor();
+            StopAnimations();
+            crownAura.transform.position = crownObject.transform.position;
+            crownAura.Play();
+            var pos = crownRenderer.transform.position;
+            auraTweens.Add(crownAura.transform.DOMoveX(pos.x, auraTweenDuration));
+            auraTweens[^1].SetEase(Ease.InOutSine);
+            auraTweens.Add(crownAura.transform.DOMoveZ(pos.z, auraTweenDuration));
+            auraTweens[^1].SetEase(Ease.InOutSine);
+            auraTweens.Add(crownAura.transform.DOMoveY(pos.y + 5f,
+                auraTweenDuration / 2f));
+            auraTweens[^1].SetEase(Ease.InSine);
+            Tweener tween = crownAura.transform.DOMoveY(pos.y, auraTweenDuration / 2f);
+            tween.SetEase(Ease.OutSine);
+            tween.SetDelay(auraTweenDuration / 2f);
+            tween.OnStart(ShowSpirit);
+            auraTweens.Add(tween);
+            auraTweens[0].OnComplete(ClearAuraTweens);
+            crownMeshRenderer.enabled = false;
+        }
+
+        private void ShowSpirit()
+        {
+            AnimateCrown(true);
+        }
+
+        public void AnimateCrown(bool show)
+        {
+            crownTween = crownRenderer.DOFade(show ? 1 : 0, auraTweenDuration / 4f);
+            crownTween.SetEase(Ease.OutSine);
+            crownTween.OnComplete(() =>
+            {
+                crownTween.Kill();
+                crownTween = null;
+            });
+
+            if (!show && !usedParticalDisappear)
+            {
+                var systems = crownAura.GetComponentsInChildren<ParticleSystem>();
+                crownAura.Play();
+
+                usedParticalDisappear = true;
+
+                // 粒子向上移动
+                crownAura.transform.DOMoveY(crownAura.transform.position.y + 10f, auraTweenDuration / 1f).SetEase(Ease.Linear);
+            }
+        }
+
+        private void RefreshParticlesColor()
+        {
+            var color = crownMeshRenderer.material.color;
+            var systems = crownAura.GetComponentsInChildren<ParticleSystem>();
+            foreach (var VARIABLE in systems)
+            {
+                var main = VARIABLE.main;
+                main.startColor = color;
+            }
+        }
+
+        private void StopAnimations()
+        {
+            ClearAuraTweens();
+            if (crownTween == null) return;
+            crownTween.Kill();
+            crownTween = null;
+        }
+
+        private void ClearAuraTweens()
+        {
+            foreach (var VARIABLE in auraTweens) VARIABLE.Kill();
+            auraTweens.Clear();
+        }
+
+        internal void Revival()
+        {
+            DOTween.Clear();
+            LevelUI.Instance.HideScreen(fog.fogColor, 0.32f, () =>
+            {
+                ResetScene();
+                LevelManager.revivePlayer.Invoke();
+                LevelManager.DestroyRemain();
+                Player.Rigidbody.isKinematic = true;
+                if (!usedRevive && player.CrownCount >= 1) Player.Instance.CrownCount--;
+                usedRevive = true;
+                var manager = FindObjectOfType<GuidanceController>();
+                if (manager.useGuideline)
+                    manager.ResetAllTaps();
+            },
+                () =>
+                {
+                    Player.Rigidbody.isKinematic = false;
+                    player.allowTurn = true;
+                });
+        }
+
+        private void ResetScene()
+        {
+            if (CameraFollower.Instance) camera.SetCamera();
+            fog.SetFog(player.sceneCamera);
+            light.SetLight(player.sceneLight);
+            ambient.SetAmbient();
+            foreach (SingleColor s in materialColorsAuto) s.SetColor();
+            foreach (SingleColor s in materialColorsManual) s.SetColor();
+            foreach (SingleImage s in imageColorsAuto) s.SetColor();
+            foreach (SingleImage s in imageColorsManual) s.SetColor();
+
+            AudioManager.Stop();
+            AudioManager.Time = GameTime;
+            AudioManager.Volume = 1f;
+            ScoreReader.Instance.hitTime.RemoveAll(num => num < GameTime);
+            ScoreReader.Instance.index = 0;
+            player.gameTime = GameTime;
+            player.SoundTrackProgress = trackProgress;
+            player.ClearPool();
+            player.BlockCount = 0;
+            player.Speed = playerSpeed;
+            Physics.gravity = sceneGravity;
+            LevelManager.InitPlayerPosition(player, revivePosition.position, true, direction);
+            foreach (SetActive s in actives)
+                if (!s.activeOnAwake)
+                    s.Revive();
+            foreach (PlayAnimator a in animators)
+                foreach (SingleAnimator s in a.animators)
+                    if (!s.dontRevive && s.played)
+                        s.SetState();
+            foreach (FakePlayer f in fakes)
+                f.ResetState();
+            player.SetAnimatorProgresses(GameTime);
+            player.SetTimelineProgresses(GameTime);
+            onRevive.Invoke();
+        }
+
+        public void JumpToHere()
+        {
+            if (LevelManager.GameState == GameStatus.Waiting)
+            {
+                LevelUI.Instance.HideScreen(fog.fogColor, 0.32f, () =>
+                {
+                    player.Soundtrack = AudioManager.PlayTrack(player.levelData.soundTrack, 1, false);
+                    player.Soundtrack.time = GameTime;
+                    eventWeNeedInvokeWhenJumpToHere.Invoke();
+                    LevelManager.InitPlayerPosition(player, revivePosition.position, true, direction);
+                    ResetScene();
+                },
+                    () =>
+                    {
+                        Player.Rigidbody.isKinematic = false;
+                        player.allowTurn = true;
+                    });
+            }
+        }
+    }
+}
