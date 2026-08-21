@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
-public class ParticleSystemPlay : MonoBehaviour
+public class PlayParticleSystem : MonoBehaviour
 {
     public ParticleSystem particlesystem;
     public float starttime;

@@ -12,7 +12,7 @@ namespace ConceptGames.ConceptLineOrion.Level
             var audioSource = new GameObject($"One shot sound: {clip.name}").AddComponent<AudioSource>();
             DontDestroyOnLoad(audioSource);
             audioSource.clip = clip;
-            audioSource.volume = PlayerPrefs.GetFloat("Game_Sound_Effect");
+            audioSource.volume = 1f;
             audioSource.Play();
             Destroy(audioSource.gameObject, clip.length);
         }
@@ -23,10 +23,6 @@ namespace ConceptGames.ConceptLineOrion.Level
             audioSource.clip = clip;
             audioSource.volume = volume;
             audioSource.time = time;
-            if (SpeedSetting.Instance)
-                audioSource.pitch = SpeedSetting.Instance.speed;
-            else
-                audioSource.pitch = 1f;
             audioSource.Play();
             if (!playImmediately) audioSource.Stop();
             return audioSource;

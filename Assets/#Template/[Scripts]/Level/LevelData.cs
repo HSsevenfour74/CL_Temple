@@ -9,20 +9,11 @@ using UnityEngine.UI;
 
 namespace ConceptGames.ConceptLineOrion.Level
 {
-    [Serializable]
-    public class Author
-    {
-        public string name;
-        public Texture image;
-        public string url;
-    }
     [CreateAssetMenu(menuName = "Dancing Line Fanmade/Level Data", fileName = "Level Data")]
     public class LevelData : ScriptableObject
     {
         public string levelTitle = "标题";
-        public int price;
         public AudioClip soundTrack;
-        public float soundStartTime;
         public int blocknum = 10;
         public int crownnum = 3;
         [MinValue(0)] public float speed = 12;
@@ -31,11 +22,6 @@ namespace ConceptGames.ConceptLineOrion.Level
         [Min(0), ShowIf("@!useMusicTime")] public float levelTime;
         public Vector3 gravity = LevelManager.defaultGravity;
         [TableList] public List<SingleColor> colors = new List<SingleColor>();
-        [TableList] public List<Author> authors = new List<Author>();
-        public string bgm;
-        public int bpm;
-
-        [SerializeField] public Difficulty difficulty;
         internal void SetLevelData()
         {
             Player.Instance.Speed = speed;

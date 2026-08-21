@@ -11,7 +11,7 @@ namespace ConceptGames.ConceptLineOrion.Level
     [DisallowMultipleComponent]
     public class PlayerTrailRenderer : MonoBehaviour
     {
-        [SerializeField] private GuidelineManager controller;
+        [SerializeField] private GuidanceController controller;
         [SerializeField] private int maxDistance = 36000;
         [SerializeField] private Color trailColor = Color.blue;
         [SerializeField] private Vector3 trailOffset = new(0f, 0.4f, 0f);

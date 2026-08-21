@@ -53,7 +53,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5a0273a03cd0af14f839356e78d3de9e, type: 2}
+  - {fileID: 2100000, guid: 06c2db0c53f323d43a95e70ed624a4af, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -98,11 +98,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spriteRenderer: {fileID: 5698516200752898301}
-  material: {fileID: 2100000, guid: 5a0273a03cd0af14f839356e78d3de9e, type: 2}
+  material: {fileID: 2100000, guid: 06c2db0c53f323d43a95e70ed624a4af, type: 2}
   sprite: {fileID: 1718332546, guid: f4c072592fafc7248bbd1214ad116aaf, type: 3}
-  displayTime: -100
   triggerTime: 0
   triggerDistance: 1
   colorIndex: 0
   haveLine: 1
-  triggered: 0

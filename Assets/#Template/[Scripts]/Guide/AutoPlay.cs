@@ -9,7 +9,7 @@ namespace ConceptGames.ConceptLineOrion.Level.Editor
         void Start()
         {
             autoPlay = GameObject.Find("AutoPlay");
-            if (autoPlay && PlayerPrefs.GetString("UserGroup") == "2")
+            if (autoPlay)
                 autoPlay.SetActive(false);
             else
                 this.gameObject.SetActive(false);

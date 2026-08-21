@@ -25,11 +25,6 @@ namespace ConceptGames.ConceptLineOrion.UI
         [SerializeField]
         private CanvasGroup CanvasG;
 
-        public Text block;
-        public CanvasGroup _1;
-        public CanvasGroup skinchoose;
-        public GameObject skinButton;
-
         public static StartPage Instance { get; private set; }
 
         private void Awake()
@@ -38,18 +33,15 @@ namespace ConceptGames.ConceptLineOrion.UI
         }
         public void Hide()
         {
-            block.text = block.text = (PlayerPrefs.GetInt("PlayerBlock") - 1).ToString("N0");
-            PlayerPrefs.SetInt("PlayerBlock", PlayerPrefs.GetInt("PlayerBlock") - 1);
-            _1.DOFade(1f, 1f);
             foreach (RectTransform l in moveLeft)
             {
                 if (l.GetComponent<Button>()) l.GetComponent<Button>().interactable = false;
-                l.DOAnchorPos(new Vector2(-300f, 0f), 0.4f).SetEase(Ease.InSine).OnComplete(() => { Destroy(gameObject); });
+                l.DOAnchorPos(new Vector2(-300f, 0f), 0.4f).SetEase(Ease.InSine);
             }
             foreach (RectTransform l in moveRight)
             {
                 if (l.GetComponent<Button>()) l.GetComponent<Button>().interactable = false;
-                l.DOAnchorPos(new Vector2(300f, 0f), 0.4f).SetEase(Ease.InSine).OnComplete(() => { Destroy(gameObject); });
+                l.DOAnchorPos(new Vector2(300f, 0f), 0.4f).SetEase(Ease.InSine);
             }
             foreach (RectTransform d in moveDown)
             {
@@ -62,62 +54,10 @@ namespace ConceptGames.ConceptLineOrion.UI
                 u.DOAnchorPos(new Vector2(0f, 200f), 0.4f).SetEase(Ease.InSine);
             }
         }
-        public void SkinPanel()
-        {
-            foreach (RectTransform l in moveLeft)
-            {
-                l.DOAnchorPos(new Vector2(-300f, 0f), 0.5f).SetEase(Ease.InSine);
-            }
-            foreach (RectTransform d in moveDown)
-            {
-                d.DOAnchorPos(new Vector2(0f, -600f), 0.5f).SetEase(Ease.InSine).OnComplete(() =>
-                {
-                    skinchoose.DOFade(1f, 0.5f);
-                    skinchoose.interactable = true;
-                    skinchoose.blocksRaycasts = true;
-                });
-            }
-            foreach (RectTransform u in moveRight)
-            {
-                u.DOAnchorPos(new Vector2(300f, 0f), 0.4f).SetEase(Ease.InSine);
-            }
-            foreach (RectTransform l in moveUp)
-            {
-                l.DOAnchorPos(new Vector2(0f, 200f), 0.4f).SetEase(Ease.InSine);
-            }
-        }
-        public void BackSkinPanel()
-        {
-            skinchoose.interactable = false;
-            skinchoose.blocksRaycasts = false;
-            skinchoose.DOFade(0f, 0.5f).OnComplete(() =>
-            {
-                foreach (RectTransform l in moveLeft)
-                {
-                    l.DOAnchorPos(new Vector2(0f, 0f), 0.5f).SetEase(Ease.InSine);
-                }
-                foreach (RectTransform d in moveDown)
-                {
-                    d.DOAnchorPos(new Vector2(0f, 0f), 0.5f).SetEase(Ease.InSine);
-                }
-                foreach (RectTransform u in moveRight)
-                {
-                    u.DOAnchorPos(new Vector2(00f, 0f), 0.4f).SetEase(Ease.InSine);
-                }
-                foreach (RectTransform l in moveUp)
-                {
-                    l.DOAnchorPos(new Vector2(0f, 0f), 0.4f).SetEase(Ease.InSine);
-                }
-            });
-        }
         void Start()
         {
-            skinchoose.alpha = 0f;
-            skinchoose.interactable = false;
-            skinchoose.blocksRaycasts = false;
             foreach (Image a in uiimage)
                 a.color = Player.Instance.uicolor;
-            block.text = PlayerPrefs.GetInt("PlayerBlock").ToString("N0");
         }
         private void Update()
         {

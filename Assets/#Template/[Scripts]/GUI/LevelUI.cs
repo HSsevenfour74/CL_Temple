@@ -8,7 +8,6 @@ using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using AssetKits.ParticleImage;
-using System.Collections;
 using System;
 
 namespace ConceptGames.ConceptLineOrion.UI
@@ -21,8 +20,6 @@ namespace ConceptGames.ConceptLineOrion.UI
         [SerializeField] public Text title;
         [SerializeField] public Text percentage;
         [SerializeField] public Text block;
-        [SerializeField] private Text coin;
-        [SerializeField] private Text getcoin;
         [SerializeField] private Text perfect;
         [SerializeField] private Text newbest;
         [SerializeField] private CanvasGroup textSide;
@@ -34,19 +31,15 @@ namespace ConceptGames.ConceptLineOrion.UI
         [SerializeField] private List<Image> crownInfill = new List<Image>();
         [SerializeField] public Vector2 m_Scale;
         [SerializeField] private List<AudioClip> crownSount = new List<AudioClip>();
-        [SerializeField] private List<AudioClip> effectSount = new List<AudioClip>();
         [SerializeField] private List<ParticleImage> crownParticles = new List<ParticleImage>();
         [SerializeField] private List<Button> buttons = new List<Button>();
         [SerializeField] private List<Image> crownback = new List<Image>();
         [SerializeField] private List<ParticleImage> newBestParticles = new List<ParticleImage>();
-        [SerializeField] private CanvasGroup getCoinPanel;
-        [SerializeField] private Text blockPanel;
         [Title("Revive")]
         [SerializeField] private Text percentageRevive;
         [SerializeField] private RectTransform barFillRevive;
         [SerializeField] private Image hideScreenImage;
         [SerializeField] private CanvasGroup reviveAlpha;
-
 
         [Title("Other")]
         private Player player;
@@ -88,6 +81,11 @@ namespace ConceptGames.ConceptLineOrion.UI
         {
             Ease movementCurve = Ease.InCubic;
             float movementY = 120F;
+
+            //UIÎÄ×Ö
+            percentage.text = (int)(percent * 100f) + "%";
+            block.text = $"{blockCount}/{player.levelData.blocknum}";
+            title.text = player.levelData.levelTitle;
             Cursor.visible = true;
             if (normal)
             {
@@ -110,28 +108,9 @@ namespace ConceptGames.ConceptLineOrion.UI
                     foreach (var i in newBestParticles)
                         i.Play();
                 }
-                //UIÎÄ×Ö
-                percentage.text = (int)(percent * 100f) + "%";
-                block.text = $"{blockCount}/{player.levelData.blocknum}";
-                title.text = player.levelData.levelTitle;
-                getcoin.text = "+" + ((int)(percent * 200) + (crownCount * 100) + (blockCount * 50)).ToString("N0");
-                blockPanel.text = PlayerPrefs.GetInt("PlayerBlock").ToString("N0");
-
-                //»õ±Ò
-                int currentNumber = PlayerPrefs.GetInt("PlayerCoin");
-                DOTween.To(() => currentNumber, x => currentNumber = x, currentNumber + (int)(percent * 200) + (crownCount * 100) + (blockCount * 50), 2.5f)
-                .OnUpdate(() =>
-                {
-                    coin.text = currentNumber.ToString("N0");
-                    PlayerPrefs.SetInt("PlayerCoin", currentNumber);
-                })
-                .SetEase(Ease.OutQuad).OnComplete(() =>
-                {
-                    getCoinPanel.DOFade(0f, 2.5f);
-                });
+                
 
                 //»Ê¹Ú
-                AudioManager.PlayClip(effectSount[crownCount]);
                 if (Player.Instance.levelData.crownnum == 0)
                 {
                     foreach (Image a in crownback)
@@ -222,7 +201,6 @@ namespace ConceptGames.ConceptLineOrion.UI
                     Debug.LogError($"´íÎóÐÅÏ¢: {e.Message}");
                     Debug.LogError($"¶ÑÕ»¸ú×Ù: {e.StackTrace}");
                     hideScreenImage.DOFade(0f, duration).SetEase(Ease.Linear).OnComplete(fadeOut.Invoke);
-                    SystemPrompt.Instance.TipPos("ReviveError(" + e.StackTrace + ")", 2);
                 }
                 hideScreenImage.DOFade(0f, duration).SetEase(Ease.Linear).OnComplete(fadeOut.Invoke);
             });
@@ -237,11 +215,6 @@ namespace ConceptGames.ConceptLineOrion.UI
             reviveAlpha.interactable = false;
             background.color = Color.clear;
             foreach (var b in buttons) b.interactable = false;
-        }
-        public void MainMenu()
-        {
-            if (LoadingPage.Instance)
-                LoadingPage.Instance.Load("Choose Level");
         }
     }
 }

@@ -43,12 +43,6 @@ namespace ConceptGames.ConceptLineOrion.Guide
                 }
             }
         }
-        private void Start()
-        {
-            if (PlayerPrefs.GetInt("Game_Key_Enabled") == 1)
-                isplay = true;
-            else isplay = false;
-        }
 
 #if UNITY_EDITOR
         private void ReadScore()

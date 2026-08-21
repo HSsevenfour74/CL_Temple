@@ -126,11 +126,8 @@ namespace ConceptGames.ConceptLineOrion.Level
                 case DieReason.Hit:
                     GameState = GameStatus.Died;
                     AudioManager.PlayClip(Resources.Load<AudioClip>("Audios/Hit"));
-                    if (cubes != null && (PlayerPrefs.GetString("SkinID") == "Headphone" || PlayerPrefs.GetString("SkinID") == "HeadphoneRomance" || PlayerPrefs.GetString("SkinID") == "Normal"))
-                    {
-                        dieCubes = UnityEngine.Object.Instantiate(cubes, player.transform.position, player.transform.rotation);
-                        dieCubes.GetComponent<PlayerCubes>().Play(collision);
-                    }
+                    dieCubes = UnityEngine.Object.Instantiate(cubes, player.transform.position, player.transform.rotation);
+                    dieCubes.GetComponent<PlayerCubes>().Play(collision);
                     break;
                 case DieReason.Drowned:
                     GameState = GameStatus.Moving;
@@ -141,7 +138,6 @@ namespace ConceptGames.ConceptLineOrion.Level
                     break;
             }
             if (!revive) GameOverNormal(false); else GameOverRevive();
-            
         }
 
         public static void GameOverNormal(bool complete)

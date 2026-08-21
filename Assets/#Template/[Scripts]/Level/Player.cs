@@ -16,19 +16,18 @@ namespace ConceptGames.ConceptLineOrion.Level
     [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider), typeof(Rigidbody))]
     public class Player : MonoBehaviour
     {
+        [HideInInspector]
         public Transform selfTransform;
 
         public static Player Instance { get; private set; }
         public static Rigidbody Rigidbody { get; private set; }
 
-        public GameObject tailPrefab;
+        private GameObject tailPrefab;
         private GameObject cubesPrefab;
         private GameObject dustParticle;
         private GameObject uiPrefab;
         private GameObject startPrefab;
         private GameObject loadingPrefab;
-        private GameObject post;
-        private GameObject fpsPrefab;
 
         [Title("Data")]
         public LevelData levelData;
@@ -43,6 +42,7 @@ namespace ConceptGames.ConceptLineOrion.Level
         [MinValue(-1)] public static int poolSize = 1000;
         public List<Animator> playedAnimators;
         public List<PlayableDirector> playedTimelines;
+        public List<Crown> crowns = new List<Crown>();
         public bool allowTurn = true;
         public bool noDeath;
         public bool drawDirection;
@@ -59,12 +59,11 @@ namespace ConceptGames.ConceptLineOrion.Level
 
         private BoxCollider characterCollider;
         private Vector3 tailPosition;
+        [HideInInspector]
         public Transform tailHolder;
         public ObjectPool<Transform> tailPool = new ObjectPool<Transform>();
-        public List<GameObject> lyrics = new List<GameObject>();
         private List<float> animatorProgresses = new List<float>();
         private List<double> timelineProgresses = new List<double>();
-        public List<Crown> crowns = new List<Crown>();
         private StartPage startPage;
         private bool loading;
 
@@ -99,11 +98,16 @@ namespace ConceptGames.ConceptLineOrion.Level
             }
         }
 
+        [HideInInspector]
         public int frame;
+        [HideInInspector]
         public float lastTime;
+        [HideInInspector]
         public float fps;
-        public const float timeInterval = 0.1f;
+        [HideInInspector]
         public float gameTime;
+
+        public const float timeInterval = 0.1f;
 
         private GameEvents events;
         public GameEvents Events =>
@@ -161,6 +165,8 @@ namespace ConceptGames.ConceptLineOrion.Level
 
         private void Start()
         {
+            loadingPrefab = Resources.Load<GameObject>("Prefabs/LoadingPage");
+            if (!LoadingPage.Instance) DontDestroyOnLoad(Instantiate(loadingPrefab));
             Cursor.visible = true;
             levelData.SetLevelData();
             firstDirection = firstDirection.Convert();
@@ -170,55 +176,15 @@ namespace ConceptGames.ConceptLineOrion.Level
             cubesPrefab = Resources.Load<GameObject>("Prefabs/Remain");
             dustParticle = Resources.Load<GameObject>("Prefabs/Dust");
             uiPrefab = Resources.Load<GameObject>("Prefabs/LevelUI");
-            startPrefab = Resources.Load<GameObject>("Prefabs/StartPage");
-            loadingPrefab = Resources.Load<GameObject>("Prefabs/LoadingPage");
+            startPrefab = Resources.Load<GameObject>("Prefabs/StartPage"); 
             tailPrefab = Resources.Load<GameObject>("Prefabs/Tail");
-
-            post = GameObject.Find("LevelHolder/Post");
-            if (PlayerPrefs.GetInt("Game_Post_Enabled") == 1)
-                post.SetActive(true);
-            else
-                post.SetActive(false);
-
-            if (PlayerPrefs.GetInt("Game_Fps_Enabled") == 1)
-            {
-                fpsPrefab = Resources.Load<GameObject>("Prefabs/FPS Counter");
-                fpsPrefab = Instantiate(fpsPrefab);
-            }
             selfTransform.GetComponent<MeshRenderer>().material = characterMaterial;
             selfTransform.eulerAngles = firstDirection;
             LevelManager.GameState = GameStatus.Waiting;
             Instantiate(uiPrefab);
-            startPage = Instantiate(startPrefab).GetComponent<StartPage>();
-            if (!LoadingPage.Instance) DontDestroyOnLoad(Instantiate(loadingPrefab));
+            startPage = Instantiate(startPrefab).GetComponent<StartPage>();       
             Events?.Invoke(0);
-            sceneCamera.depthTextureMode |= DepthTextureMode.DepthNormals;
-            sceneCamera.allowHDR = false;
-            if(PlayerPrefs.GetInt("Game_Lyric_Enabled") == 1)
-                foreach (var i in lyrics)
-                    i.SetActive(false);
-            else 
-                foreach (var i in lyrics)
-                    i.SetActive(true);
         }
-
-        private void AudioOffset_Audio_Lanuch()
-        {
-            if (!Soundtrack) Soundtrack = AudioManager.PlayTrack(levelData.soundTrack, 1f);
-            else AudioManager.Play();
-        }
-
-        private void AudioOffset_Player_Lancuh()
-        {
-            LevelManager.GameState = GameStatus.Playing;
-            foreach (Animator a in playedAnimators) a.speed = 1f;
-            foreach (PlayableDirector p in playedTimelines) p.Play();
-            foreach (PlayAnimator p in FindObjectsOfType<PlayAnimator>(true)) foreach (SingleAnimator s in p.animators) if (s.played) s.PlayAnimator();
-            foreach (FakePlayer f in FindObjectsOfType<FakePlayer>(true)) if (f.playing) f.state = FakePlayerState.Moving;
-            CreateTail();
-            Events?.Invoke(1);
-        }
-
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.R) && !loading && LevelManager.GameState == GameStatus.Playing)
@@ -242,29 +208,14 @@ namespace ConceptGames.ConceptLineOrion.Level
                         if (LevelManager.Clicked && !Falling)
                         {
                             LevelManager.GameState = GameStatus.Playing;
-                            if (PlayerPrefs.GetInt("Game_Cursor_Visible") == 1)
-                                Cursor.visible = false;
-                            else
-                                Cursor.visible = true;
-
-                            float MusicDelay = Mathf.Clamp(PlayerPrefs.GetFloat("DelayNum", 0f), -1, 1);
-                            if (MusicDelay > 0f)
-                            {
-                                //line delay
-                                AudioOffset_Audio_Lanuch();
-                                Invoke(nameof(AudioOffset_Player_Lancuh), Mathf.Abs(MusicDelay));
-                            }
-                            else if (MusicDelay < 0f)
-                            {
-                                //music delay
-                                AudioOffset_Player_Lancuh();
-                                Invoke(nameof(AudioOffset_Audio_Lanuch), Mathf.Abs(MusicDelay));
-                            }
-                            else
-                            {
-                                AudioOffset_Player_Lancuh();
-                                AudioOffset_Audio_Lanuch();
-                            }
+                            if (!Soundtrack) Soundtrack = AudioManager.PlayTrack(levelData.soundTrack, 1f);
+                            else AudioManager.Play();
+                            foreach (Animator a in playedAnimators) a.speed = 1f;
+                            foreach (PlayableDirector p in playedTimelines) p.Play();
+                            foreach (PlayAnimator p in FindObjectsOfType<PlayAnimator>(true)) foreach (SingleAnimator s in p.animators) if (s.played) s.PlayAnimator();
+                            foreach (FakePlayer f in FindObjectsOfType<FakePlayer>(true)) if (f.playing) f.state = FakePlayerState.Moving;
+                            CreateTail();
+                            Events?.Invoke(1);
                             if (startPage)
                             {
                                 startPage.Hide();

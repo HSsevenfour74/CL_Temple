@@ -14,6 +14,7 @@ namespace AssetKits.ParticleImage.Editor
             private const int MenuPriority = 10;
 
             [MenuItem("GameObject/UI/Particle Image", priority = MenuPriority)]
+            [System.Obsolete]
             private static void CreateButton(MenuCommand menuCommand)
             {
                 var canvas = Object.FindObjectsOfType(typeof(Canvas)).Cast<Canvas>().FirstOrDefault();
